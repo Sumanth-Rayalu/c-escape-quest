@@ -8,7 +8,6 @@ export interface LevelConfig {
   wallColor: string;
   floorColor: string;
   ceilingColor: string;
-  keyRevealType: 'table' | 'drawer' | 'painting' | 'floor' | 'wall';
   fogColor: string;
   fogNear: number;
   fogFar: number;
@@ -25,7 +24,6 @@ export const levelConfigs: LevelConfig[] = [
     wallColor: '#1a2a1a',
     floorColor: '#0d1a0d',
     ceilingColor: '#142014',
-    keyRevealType: 'table',
     fogColor: '#0a140a',
     fogNear: 5,
     fogFar: 20,
@@ -40,7 +38,6 @@ export const levelConfigs: LevelConfig[] = [
     wallColor: '#1a1a2a',
     floorColor: '#0d0d1a',
     ceilingColor: '#141420',
-    keyRevealType: 'drawer',
     fogColor: '#0a0a14',
     fogNear: 4,
     fogFar: 18,
@@ -55,7 +52,6 @@ export const levelConfigs: LevelConfig[] = [
     wallColor: '#2a1a2a',
     floorColor: '#1a0d1a',
     ceilingColor: '#201420',
-    keyRevealType: 'painting',
     fogColor: '#140a14',
     fogNear: 3,
     fogFar: 16,
@@ -70,7 +66,6 @@ export const levelConfigs: LevelConfig[] = [
     wallColor: '#2a1a0d',
     floorColor: '#1a0d06',
     ceilingColor: '#201408',
-    keyRevealType: 'floor',
     fogColor: '#140a05',
     fogNear: 4,
     fogFar: 17,
@@ -85,7 +80,6 @@ export const levelConfigs: LevelConfig[] = [
     wallColor: '#2a0d0d',
     floorColor: '#1a0606',
     ceilingColor: '#200808',
-    keyRevealType: 'wall',
     fogColor: '#140505',
     fogNear: 3,
     fogFar: 15,

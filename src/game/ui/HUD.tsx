@@ -9,19 +9,17 @@ interface HUDProps {
 
 export default function HUD({ gameState, levelConfig, onClearFeedback }: HUDProps) {
   const objectives = [
-    { label: 'Find the board', done: gameState.questionAnswered },
-    { label: 'Solve the challenge', done: gameState.questionAnswered },
+    { label: 'Explore the room', done: gameState.allQuestionsCorrect },
+    { label: 'Solve all puzzles', done: gameState.allQuestionsCorrect },
     { label: 'Find the key', done: gameState.keyCollected },
     { label: 'Activate switch', done: gameState.switchActivated },
     { label: 'Escape the room', done: gameState.doorUnlocked },
   ];
 
-  // Current objective index
   const currentObj = objectives.findIndex((o) => !o.done);
 
   return (
     <div className="fixed top-0 left-0 right-0 z-30 pointer-events-none">
-      {/* Top bar */}
       <div className="flex items-center justify-between px-6 py-4">
         {/* Level indicator */}
         <div className="pointer-events-auto">
@@ -47,12 +45,28 @@ export default function HUD({ gameState, levelConfig, onClearFeedback }: HUDProp
           </div>
         </div>
 
-        {/* Current objective */}
-        <div className="text-right">
-          <p className="text-xs font-mono text-muted-foreground">OBJECTIVE</p>
-          <p className="text-sm font-mono text-primary text-glow">
-            {currentObj >= 0 ? `> ${objectives[currentObj].label}` : '> Proceed through the door'}
-          </p>
+        {/* Lives */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1">
+            {[1, 2, 3].map((i) => (
+              <span
+                key={i}
+                className={`text-lg transition-all duration-300 ${
+                  i <= gameState.lives ? 'text-destructive scale-100' : 'text-muted scale-75 opacity-30'
+                }`}
+              >
+                ♥
+              </span>
+            ))}
+          </div>
+
+          {/* Current objective */}
+          <div className="text-right">
+            <p className="text-xs font-mono text-muted-foreground">OBJECTIVE</p>
+            <p className="text-sm font-mono text-primary text-glow">
+              {currentObj >= 0 ? `> ${objectives[currentObj].label}` : '> Proceed through the door'}
+            </p>
+          </div>
         </div>
       </div>
 
@@ -72,11 +86,11 @@ export default function HUD({ gameState, levelConfig, onClearFeedback }: HUDProp
         </div>
       )}
 
-      {/* Bottom hints bar */}
+      {/* Bottom hints */}
       <div className="fixed bottom-0 left-0 right-0 pointer-events-none">
         <div className="flex justify-center pb-4">
           <p className="text-xs font-mono text-muted-foreground/60 bg-background/30 px-4 py-2 rounded-full backdrop-blur-sm">
-            Click on glowing objects to interact • Look around the room for clues
+            Hover over objects to discover clues • Look around the room carefully
           </p>
         </div>
       </div>

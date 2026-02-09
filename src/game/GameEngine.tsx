@@ -3,7 +3,7 @@ import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import Room from './components/Room';
 import { useGameState } from './hooks/useGameState';
-import { questions } from './data/questions';
+import { useLevelSetup } from './hooks/useLevelSetup';
 import { levelConfigs } from './data/levels';
 import QuestionOverlay from './ui/QuestionOverlay';
 import HUD from './ui/HUD';
@@ -25,7 +25,8 @@ export default function GameEngine() {
     startGame,
     showQuestion,
     hideQuestion,
-    answerCorrect,
+    allQuestionsCorrect,
+    loseLife,
     clearFeedback,
     revealKey,
     collectKey,
@@ -34,21 +35,18 @@ export default function GameEngine() {
     restart,
   } = useGameState();
 
+  const levelSetup = useLevelSetup(state.currentLevel, state.seed);
+
   const currentLevelConfig = useMemo(
     () => levelConfigs[state.currentLevel - 1],
     [state.currentLevel]
   );
 
-  const currentQuestion = useMemo(
-    () => questions.find((q) => q.level === state.currentLevel)!,
-    [state.currentLevel]
-  );
-
-  const handleBoardClick = useCallback(() => {
-    if (!state.questionAnswered) {
+  const handleQuestionObjectClick = useCallback(() => {
+    if (!state.allQuestionsCorrect) {
       showQuestion();
     }
-  }, [state.questionAnswered, showQuestion]);
+  }, [state.allQuestionsCorrect, showQuestion]);
 
   const handleKeyClick = useCallback(() => {
     if (state.keyRevealed && !state.keyCollected) {
@@ -69,27 +67,20 @@ export default function GameEngine() {
     }
   }, [state.doorUnlocked, clearFeedback, nextLevel]);
 
-  const handleCorrectAnswer = useCallback(() => {
-    answerCorrect();
-  }, [answerCorrect]);
-
   const handleKeyRevealed = useCallback(() => {
     revealKey();
   }, [revealKey]);
 
-  // Start screen
   if (state.gamePhase === 'start') {
     return <StartScreen onStart={startGame} />;
   }
 
-  // Victory screen
   if (state.gamePhase === 'victory') {
     return <VictoryScreen onRestart={restart} />;
   }
 
   return (
     <div className="relative w-full h-screen bg-background overflow-hidden">
-      {/* 3D Canvas */}
       <Canvas
         camera={{ position: [0, 1, 6], fov: 60, near: 0.1, far: 100 }}
         shadows
@@ -100,7 +91,8 @@ export default function GameEngine() {
           <Room
             levelConfig={currentLevelConfig}
             gameState={state}
-            onBoardClick={handleBoardClick}
+            levelSetup={levelSetup}
+            onQuestionObjectClick={handleQuestionObjectClick}
             onKeyClick={handleKeyClick}
             onSwitchClick={handleSwitchClick}
             onDoorClick={handleDoorClick}
@@ -120,18 +112,18 @@ export default function GameEngine() {
         />
       </Canvas>
 
-      {/* HUD Overlay */}
       <HUD
         gameState={state}
         levelConfig={currentLevelConfig}
         onClearFeedback={clearFeedback}
       />
 
-      {/* Question Overlay */}
       {state.showQuestion && (
         <QuestionOverlay
-          question={currentQuestion}
-          onCorrect={handleCorrectAnswer}
+          questions={levelSetup.selectedQuestions}
+          lives={state.lives}
+          onAllCorrect={allQuestionsCorrect}
+          onWrong={loseLife}
           onClose={hideQuestion}
         />
       )}

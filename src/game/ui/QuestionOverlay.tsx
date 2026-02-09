@@ -1,38 +1,64 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { Question } from '../data/questions';
 
 interface QuestionOverlayProps {
-  question: Question;
-  onCorrect: () => void;
+  questions: Question[];
+  lives: number;
+  onAllCorrect: () => void;
+  onWrong: () => void;
   onClose: () => void;
 }
 
-export default function QuestionOverlay({ question, onCorrect, onClose }: QuestionOverlayProps) {
+export default function QuestionOverlay({ questions, lives, onAllCorrect, onWrong, onClose }: QuestionOverlayProps) {
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [inputValue, setInputValue] = useState('');
   const [feedback, setFeedback] = useState<{ correct: boolean; message: string } | null>(null);
   const [answered, setAnswered] = useState(false);
+  const mountedRef = useRef(true);
 
-  const handleSubmit = useCallback(() => {
+  useEffect(() => {
+    return () => { mountedRef.current = false; };
+  }, []);
+
+  const question = questions[currentIndex];
+  if (!question) return null;
+
+  const handleSubmit = () => {
     const answer = question.type === 'mcq' ? selectedOption : inputValue.trim();
     if (!answer) return;
 
     const isCorrect = answer === question.correctAnswer;
 
-    setFeedback({
-      correct: isCorrect,
-      message: isCorrect
-        ? `✓ Correct! ${question.explanation}`
-        : `✗ Wrong answer. Try again.`,
-    });
-
     if (isCorrect) {
       setAnswered(true);
-      setTimeout(() => onCorrect(), 2000);
+      setFeedback({ correct: true, message: `✓ Correct! ${question.explanation}` });
+
+      setTimeout(() => {
+        if (!mountedRef.current) return;
+
+        const nextIndex = currentIndex + 1;
+        if (nextIndex >= questions.length) {
+          onAllCorrect();
+        } else {
+          setCurrentIndex(nextIndex);
+          setSelectedOption(null);
+          setInputValue('');
+          setFeedback(null);
+          setAnswered(false);
+        }
+      }, 1500);
     } else {
-      setTimeout(() => setFeedback(null), 2500);
+      setFeedback({ correct: false, message: `✗ Wrong! ${question.explanation}` });
+      setTimeout(() => {
+        if (!mountedRef.current) return;
+        onWrong();
+        setFeedback(null);
+        setSelectedOption(null);
+        setInputValue('');
+      }, 1500);
     }
-  }, [selectedOption, inputValue, question, onCorrect]);
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/90 backdrop-blur-sm">
@@ -43,21 +69,43 @@ export default function QuestionOverlay({ question, onCorrect, onClose }: Questi
           <div className="w-3 h-3 rounded-full bg-accent" />
           <div className="w-3 h-3 rounded-full bg-primary" />
           <span className="ml-2 text-xs font-mono text-muted-foreground">
-            escape_room_v1.0 — level_{question.level}_challenge.c
+            escape_room — puzzle {currentIndex + 1}/{questions.length}
           </span>
+
+          {/* Lives display */}
+          <div className="ml-auto flex items-center gap-1 mr-3">
+            {[1, 2, 3].map((i) => (
+              <span key={i} className={`text-sm ${i <= lives ? 'text-destructive' : 'text-muted'}`}>
+                ♥
+              </span>
+            ))}
+          </div>
+
           <button
             onClick={onClose}
-            className="ml-auto text-muted-foreground hover:text-foreground transition-colors text-lg leading-none"
+            className="text-muted-foreground hover:text-foreground transition-colors text-lg leading-none"
           >
             ×
           </button>
         </div>
 
         <div className="p-6 space-y-5">
+          {/* Progress bar */}
+          <div className="flex gap-1">
+            {questions.map((_, i) => (
+              <div
+                key={i}
+                className={`h-1 flex-1 rounded-full transition-all ${
+                  i < currentIndex ? 'bg-primary' : i === currentIndex ? 'bg-primary/60 animate-pulse' : 'bg-muted'
+                }`}
+              />
+            ))}
+          </div>
+
           {/* Question */}
           <div>
             <p className="text-sm font-mono text-primary mb-2">
-              {'>'} LEVEL {question.level} — {question.type === 'mcq' ? 'MULTIPLE CHOICE' : 'INPUT ANSWER'}
+              {'>'} PUZZLE {currentIndex + 1} of {questions.length} — {question.type === 'mcq' ? 'MULTIPLE CHOICE' : 'INPUT ANSWER'}
             </p>
             <p className="text-foreground text-base leading-relaxed whitespace-pre-line">
               {question.question}
@@ -105,22 +153,20 @@ export default function QuestionOverlay({ question, onCorrect, onClose }: Questi
 
           {/* Text input */}
           {question.type === 'input' && (
-            <div>
-              <div className="flex items-center gap-2 font-mono text-sm">
-                <span className="text-primary">{'>'}</span>
-                <input
-                  type="text"
-                  value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-                  disabled={answered}
-                  placeholder="Type your answer..."
-                  className="flex-1 bg-transparent border-b border-border px-2 py-1 text-foreground
-                    placeholder:text-muted-foreground focus:outline-none focus:border-primary
-                    disabled:opacity-50 font-mono"
-                  autoFocus
-                />
-              </div>
+            <div className="flex items-center gap-2 font-mono text-sm">
+              <span className="text-primary">{'>'}</span>
+              <input
+                type="text"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && !answered && handleSubmit()}
+                disabled={answered}
+                placeholder="Type your answer..."
+                className="flex-1 bg-transparent border-b border-border px-2 py-1 text-foreground
+                  placeholder:text-muted-foreground focus:outline-none focus:border-primary
+                  disabled:opacity-50 font-mono"
+                autoFocus
+              />
             </div>
           )}
 
